@@ -1,0 +1,63 @@
+{
+    "name": "sammyjo20/saloon",
+    "description": "Build beautiful API integrations and SDKs with Saloon",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "sammyjo20",
+        "saloon",
+        "sdk",
+        "api",
+        "api-integrations"
+    ],
+    "authors": [
+        {
+            "name": "Sam Carré",
+            "email": "29132017+Sammyjo20@users.noreply.github.com",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://github.com/sammyjo20/saloon",
+    "require": {
+        "php": "^8.0",
+        "guzzlehttp/guzzle": "^7.5",
+        "illuminate/support": "^8.0 || ^9.0 || ^10.0",
+        "nesbot/carbon": "^2.64"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.5",
+        "league/flysystem": "^3.0",
+        "pestphp/pest": "^1.21",
+        "spatie/ray": "^1.33",
+        "symfony/dom-crawler": "^6.0"
+    },
+    "suggest": {
+        "symfony/dom-crawler": "Required for the SaloonResponse dom() method to parse HTML and XML."
+    },
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "Sammyjo20\\Saloon\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sammyjo20\\Saloon\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "fix-code": [
+            "./vendor/bin/php-cs-fixer fix"
+        ],
+        "test": [
+            "./vendor/bin/pest"
+        ]
+    }
+}

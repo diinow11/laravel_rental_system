@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .shadow-hover {
+        @apply transition-shadow duration-300 hover:shadow-md;
+    }
+    
+    .striped-table tbody tr:nth-child(even) {
+        @apply bg-gray-50;
+    }
+}

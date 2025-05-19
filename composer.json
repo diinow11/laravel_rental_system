@@ -6,12 +6,17 @@
     "license": "MIT",
     "require": {
         "php": "^8.0.2",
+        "africastalking/africastalking": "^3.0",
         "almasaeed2010/adminlte": "~3.1",
-        "guzzlehttp/guzzle": "^7.2",
+        "blade-ui-kit/blade-heroicons": "^2.6",
+        "guzzlehttp/guzzle": "^7.9",
         "laravel/framework": "^9.2",
         "laravel/sanctum": "^2.14.1",
         "laravel/tinker": "^2.7",
-        "laravel/ui": "^3.4"
+        "laravel/ui": "^3.4",
+        "livewire/livewire": "^2.12",
+        "samuelmwangiw/africastalking-laravel": "^0.4.6",
+        "spatie/laravel-permission": "^6.17"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

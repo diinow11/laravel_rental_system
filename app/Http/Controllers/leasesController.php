@@ -2,140 +2,89 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
+use Illuminate\Http\Request;   // ← only one import
 use App\Models\Lease;
-use App\Models\Property;
 use App\Models\Employee;
+use App\Models\Property;
 
 class leasesController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {   
-        $leases = Lease::orderBy('pid', 'desc')->get();
-        return view('admin.leases.index',['leases'=>$leases]);
-    }
-
-    public function search(Request $request)
-    {   
-        if(isset($_GET['searchText'])){
-            $searchText = $_GET['searchText'];
-            $leases = Lease::Where('location','LIKE','%'.$searchText.'%');
-            return view('admin.leases.index',['leases'=>$leases]);
+    public function index(Request $request)
+    {
+        $leases = Lease::orderBy('lid', 'desc')->get();
+        if ($request->ajax()) {
+            return view('admin.leases.index-panel', compact('leases'));
         }
+        return view('admin.leases.index', compact('leases'));
     }
 
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {   
-        $leases = Lease::all();
+    public function create(Request $request)
+    {
         $employees = Employee::all();
-        $properties = Property::all();
-
-        return view('admin.leases.add-edit',[
-        'leases'=>$leases,
-        'employees'=>$employees,
-        'properties'=>$properties]);
+        $properties= Property::all();
+        if ($request->ajax()) {
+            return view('admin.leases.create-panel', compact('employees','properties'));
+        }
+        return view('admin.leases.create', compact('employees','properties'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
-    {   
-        $eid = Employee::where('first_name','LIKE',$request->eid)->pluck('eid')->first();
-        // $pid = Property::where('pid','LIKE',$request->pid)->pluck('pid')->first();
-        // $pid = explode("-",$request->pid);
-        $l = new Lease;
-        $l->eid = $eid;
-        $l->pid = $request->pid;
-        $l->duration = $request->duration;
+    {
+        $l = new Lease();
+        $l->eid         = $request->eid;
+        $l->pid         = $request->pid;
+        $l->duration    = $request->duration;
         $l->lease_start = $request->lease_start;
-        $l->lease_expire = $request->lease_expire;
-        $l->rent = $request->rent;
+        $l->lease_expire= $request->lease_expire;
+        $l->rent        = $request->rent;
         $l->description = $request->description;
         $l->save();
+
+        if ($request->ajax()) {
+            $leases = Lease::orderBy('lid','desc')->get();
+            return view('admin.leases.index-panel', compact('leases'));
+        }
         return redirect('leases/create');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
+    public function edit(Request $request, $lid)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($lid)
-    {
-        $leases = Lease::find($lid);
+        $lease     = Lease::findOrFail($lid);
         $employees = Employee::all();
-        $properties = Property::all();
-
-        // $properties = Property::find($leases->pid);
-        
-        // $locations = Location::all();
-        // return view('admin.leases.edit',['leases'=>$leases]);
-        return view('admin.leases.add-edit',[
-        'leases'=>$leases,
-        'employees'=>$employees,
-        'properties'=>$properties]);
+        $properties= Property::all();
+        if ($request->ajax()) {
+            return view('admin.leases.edit-panel', compact('lease','employees','properties'));
+        }
+        return view('admin.leases.edit', compact('lease','employees','properties'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $pid)
+    public function update(Request $request, $lid)
     {
-        $p=Lease::find($pid);
-        $p->location = $request->location;
-        $p->price = $request->price;
-        $p->area = $request->area;
-        $p->type = $request->type;
-        $p->baths = $request->baths;
-        $p->rooms = $request->rooms;
-        $p->stories = $request->stories;
-        $p->description = $request->description;
-        $p->save();
+        $l = Lease::findOrFail($lid);
+        $l->eid         = $request->eid;
+        $l->pid         = $request->pid;
+        $l->duration    = $request->duration;
+        $l->lease_start = $request->lease_start;
+        $l->lease_expire= $request->lease_expire;
+        $l->rent        = $request->rent;
+        $l->description = $request->description;
+        $l->save();
+
+        if ($request->ajax()) {
+            $leases = Lease::orderBy('lid','desc')->get();
+            return view('admin.leases.index-panel', compact('leases'));
+        }
         return redirect('leases');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
+    public function destroy(Request $request, $lid)
     {
-        $p = Lease::find($id);
-        $p->delete();
+        $l = Lease::findOrFail($lid);
+        $l->delete();
+        if ($request->ajax()) {
+            $leases = Lease::orderBy('lid','desc')->get();
+            return view('admin.leases.index-panel', compact('leases'));
+        }
         return redirect('leases');
     }
 }

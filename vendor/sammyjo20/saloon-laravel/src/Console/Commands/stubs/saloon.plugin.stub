@@ -1,0 +1,13 @@
+<?php
+
+namespace {{ namespace }};
+
+use Sammyjo20\Saloon\Http\SaloonRequest;
+
+trait {{ class }}
+{
+    public function boot{{ class }}(SaloonRequest $request): void
+    {
+        //
+    }
+}

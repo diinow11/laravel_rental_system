@@ -1,77 +1,122 @@
 <?php
 
-use App\Http\Middleware\Authenticate;
-
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Middleware\Authenticate;
+use App\Mail\TenantNotification;
+use Illuminate\Support\Facades\Mail;
+use AfricasTalking\SDK\AfricasTalking;
 
-use App\Http\Controllers\adminController;
-use App\Http\Controllers\propertiesController;
-use App\Http\Controllers\leasesController;
-use App\Http\Controllers\locationsController;
-use App\Http\Controllers\emailsController;
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
 
-// Route::view('/', 'login1');
+
+// Admin Controllers
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\TenantController;
+use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\GatewayPaymentController;
+use App\Http\Controllers\Admin\PaymentModeController;
+use App\Http\Controllers\Admin\PaymentReceiptController;
+use App\Http\Controllers\Admin\ApartmentController;
+use App\Http\Controllers\Admin\HouseUnitController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\SMSCallbackController;
+
+use App\Http\Controllers\Admin\RentPaymentController;
+use App\Http\Controllers\Tenant\Auth\TenantAuthController;
+use App\Http\Controllers\Tenant\DashboardController as TenantDashboardController;
+use App\Http\Controllers\Tenant\PaymentController;
+use App\Http\Controllers\MpesaController;
+
+
+
+Route::post('/api/mpesa/stkpush', [MpesaController::class, 'stkPush']);
+Route::post('/api/mpesa/callback', [MpesaController::class, 'mpesaCallback']);
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public routes
 Route::view('/', 'auth.login1')->name('login1');
 Route::view('/register1', 'auth.register1')->name('register1');
 
 Auth::routes();
 
-// Admin Routes
-Route::get('/admin', [App\Http\Controllers\adminController::class, 'index'])->name('Dashboard')->middleware('auth');
+// ─────────────────────────────────────────────────────────────────────────────
+// Default redirect after login
 
-Route::post('/locations/store', [App\Http\Controllers\locationsController::class, 'store']);
-
-
-
-Route::middleware([Authenticate::class])->group(function () {
-
-    // Properties
-    Route::prefix('properties')->group(function () {
-        Route::get('/', [App\Http\Controllers\propertiesController::class, 'index'])->name('properties');
-        Route::get('/create', [App\Http\Controllers\propertiesController::class, 'create']);
-        Route::post('/store', [App\Http\Controllers\propertiesController::class, 'store'])->name('create.property');
-        Route::get('/delete/{pid}', [App\Http\Controllers\propertiesController::class, 'destroy']);
-        Route::get('/edit/{pid}', [App\Http\Controllers\propertiesController::class, 'edit']);
-        Route::post('/update/{pid}', [App\Http\Controllers\propertiesController::class, 'update'])->name('update.property');
-    });
+Route::prefix('tenant')->name('tenant.')->group(function () {
+    Route::get('login', [TenantAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [TenantAuthController::class, 'login'])->name('login.submit');
+    Route::post('logout', [TenantAuthController::class, 'logout'])->name('logout');
     
-    // Leases
-    Route::prefix('leases')->group(function () {
-        Route::get('/', [App\Http\Controllers\leasesController::class, 'index'])->name('leases');
-        Route::get('/create', [App\Http\Controllers\leasesController::class, 'create']);
-        Route::post('/store', [App\Http\Controllers\leasesController::class, 'store'])->name('create.lease');
-        Route::get('/delete/{pid}', [App\Http\Controllers\leasesController::class, 'destroy']);
-        Route::get('/edit/{pid}', [App\Http\Controllers\leasesController::class, 'edit'])->name('Edit Lease');
-        Route::post('/update/{pid}', [App\Http\Controllers\leasesController::class, 'update'])->name('update.lease');
-    });
 
-    // Employess
-    Route::prefix('employees')->group(function () {
-        Route::get('/', [App\Http\Controllers\employeesController::class, 'index'])->name('employees');
-        Route::get('/create', [App\Http\Controllers\employeesController::class, 'create'])->name('Create Employee');
-        Route::post('/store', [App\Http\Controllers\employeesController::class, 'store'])->name('create.employee');
-        Route::get('/delete/{pid}', [App\Http\Controllers\employeesController::class, 'destroy']);
-        Route::get('/edit/{pid}', [App\Http\Controllers\employeesController::class, 'edit']);
-        Route::post('/update/{pid}', [App\Http\Controllers\employeesController::class, 'update'])->name('update.employee');
-    });
+    Route::middleware('auth:tenant')->group(function () {
+        Route::get('dashboard', [TenantDashboardController::class, 'index'])->name('dashboard');
+        Route::post('pay', [TenantDashboardController::class, 'pay'])->name('pay');
+        Route::post('/pay', [PaymentController::class, 'pay'])->name('pay');
 
-    // Email
-    Route::prefix('emails')->group(function () {
-        Route::get('/compose', [emailsController::class, 'compose'])->name('compose');
-        Route::get('/inbox', [emailsController::class, 'inbox'])->name('inbox');
-        Route::get('/send-mail', [emailsController::class, 'sendMail']);
     });
- 
 });
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin-protected routes
+Route::middleware([Authenticate::class])->prefix('admin')->name('admin.')->group(function () {
+    // Dashboard
+    Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/chart-data', [AdminDashboardController::class, 'chartData'])->name('dashboard.chart-data');
+    // Apartments
+    Route::get('/apartments/create', function() {
+        return view('admin.apartments.create');
+    })->name('apartments.create');
+
+    // Tenants
+    Route::resource('tenants', TenantController::class)->only(['index', 'create', 'store']);
+    Route::post('tenants/invoices/bulk', [TenantController::class, 'bulkCreateInvoices'])->name('tenants.invoices.bulk');
+    Route::post('/tenants/notify/bulk', [TenantController::class, 'sendNotification'])->name('tenants.notify.bulk');
+   
+
+
+
+    Route::post('/tenants/notify', [TenantController::class, 'notify'])->name('tenants.notify');
+
+
+   
+    
+
+
+    // Invoices
+    Route::get('invoices', [App\Http\Controllers\Admin\InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('invoices/create', function() {
+        return view('admin.invoices.create');
+    })->name('invoices.create');
+    Route::post('invoices', [App\Http\Controllers\Admin\InvoiceController::class, 'store'])->name('invoices.store');
+ 
+
+
+
+
+    // Payments
+  
+    Route::resource('rent-payments', RentPaymentController::class)->only(['index', 'store']);
+    Route::resource('gateway-payments', GatewayPaymentController::class)->only(['index']);
+    Route::resource('payment-modes', PaymentModeController::class)->only(['index']);
+    Route::resource('payment-receipts', PaymentReceiptController::class)->only(['index']);
+
+    // Apartments & House Units
+    Route::resource('apartments', ApartmentController::class)->only(['index', 'store']);
+    Route::resource('house-units', HouseUnitController::class)->only(['index', 'store']);
+
+    // Admin
+    Route::resource('roles', RoleController::class)->only(['index', 'store', 'destroy']);
+    
+    Route::resource('users', UserController::class)->only(['index', 'store', 'destroy']);
+});
+
+Route::get('/test-email', function () {
+    Mail::to('your@gmail.com')->send(new TenantNotification('Test Subject', 'This is a test message.'));
+    return 'Test email sent';
+});
+
+Route::post('/sms/status', [SMSCallbackController::class, 'handle']);
+
+
